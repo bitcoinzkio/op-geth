@@ -334,8 +334,11 @@ func (tx *Transaction) To() *common.Address {
 // e.g. a user deposit event, or a L1 info deposit included in a specific L2 block height.
 // Non-deposit transactions return a zeroed hash.
 func (tx *Transaction) SourceHash() common.Hash {
-	if dep, ok := tx.inner.(*DepositTx); ok {
-		return dep.SourceHash
+	switch tx.inner.(type) {
+	case *DepositTx:
+		return tx.inner.(*DepositTx).SourceHash
+	case *depositTxWithNonce:
+		return tx.inner.(*depositTxWithNonce).SourceHash
 	}
 	return common.Hash{}
 }
