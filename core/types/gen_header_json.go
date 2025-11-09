@@ -29,13 +29,14 @@ func (h Header) MarshalJSON() ([]byte, error) {
 		GasUsed          hexutil.Uint64  `json:"gasUsed"          gencodec:"required"`
 		Time             hexutil.Uint64  `json:"timestamp"        gencodec:"required"`
 		Extra            hexutil.Bytes   `json:"extraData"        gencodec:"required"`
-		MixDigest        common.Hash     `json:"mixHash"`
+		MixDigest        hexutil.Bytes   `json:"mixHash"`
 		Nonce            BlockNonce      `json:"nonce"`
 		BaseFee          *hexutil.Big    `json:"baseFeePerGas" rlp:"optional"`
 		WithdrawalsHash  *common.Hash    `json:"withdrawalsRoot" rlp:"optional"`
 		BlobGasUsed      *hexutil.Uint64 `json:"blobGasUsed" rlp:"optional"`
 		ExcessBlobGas    *hexutil.Uint64 `json:"excessBlobGas" rlp:"optional"`
 		ParentBeaconRoot *common.Hash    `json:"parentBeaconBlockRoot" rlp:"optional"`
+		RequestsHash     *common.Hash    `json:"requestsHash" rlp:"optional"`
 		Hash             common.Hash     `json:"hash"`
 	}
 	var enc Header
@@ -52,13 +53,14 @@ func (h Header) MarshalJSON() ([]byte, error) {
 	enc.GasUsed = hexutil.Uint64(h.GasUsed)
 	enc.Time = hexutil.Uint64(h.Time)
 	enc.Extra = h.Extra
-	enc.MixDigest = h.MixDigest
+	enc.MixDigest = h.MixDigest[:]
 	enc.Nonce = h.Nonce
 	enc.BaseFee = (*hexutil.Big)(h.BaseFee)
 	enc.WithdrawalsHash = h.WithdrawalsHash
 	enc.BlobGasUsed = (*hexutil.Uint64)(h.BlobGasUsed)
 	enc.ExcessBlobGas = (*hexutil.Uint64)(h.ExcessBlobGas)
 	enc.ParentBeaconRoot = h.ParentBeaconRoot
+	enc.RequestsHash = h.RequestsHash
 	enc.Hash = h.Hash()
 	return json.Marshal(&enc)
 }
@@ -86,6 +88,7 @@ func (h *Header) UnmarshalJSON(input []byte) error {
 		BlobGasUsed      *hexutil.Uint64 `json:"blobGasUsed" rlp:"optional"`
 		ExcessBlobGas    *hexutil.Uint64 `json:"excessBlobGas" rlp:"optional"`
 		ParentBeaconRoot *common.Hash    `json:"parentBeaconBlockRoot" rlp:"optional"`
+		RequestsHash     *common.Hash    `json:"requestsHash" rlp:"optional"`
 	}
 	var dec Header
 	if err := json.Unmarshal(input, &dec); err != nil {
@@ -162,6 +165,9 @@ func (h *Header) UnmarshalJSON(input []byte) error {
 	}
 	if dec.ParentBeaconRoot != nil {
 		h.ParentBeaconRoot = dec.ParentBeaconRoot
+	}
+	if dec.RequestsHash != nil {
+		h.RequestsHash = dec.RequestsHash
 	}
 	return nil
 }

@@ -18,6 +18,7 @@
 package types
 
 import (
+	"crypto/sha256"
 	"encoding/binary"
 	"fmt"
 	"io"
@@ -100,6 +101,9 @@ type Header struct {
 
 	// ParentBeaconRoot was added by EIP-4788 and is ignored in legacy headers.
 	ParentBeaconRoot *common.Hash `json:"parentBeaconBlockRoot" rlp:"optional"`
+
+	// RequestsHash was added by EIP-7685 and is ignored in legacy headers.
+	RequestsHash *common.Hash `json:"requestsHash" rlp:"optional"`
 }
 
 // field type overrides for gencodec
@@ -343,6 +347,11 @@ func CopyHeader(h *Header) *Header {
 		cpy.ParentBeaconRoot = new(common.Hash)
 		*cpy.ParentBeaconRoot = *h.ParentBeaconRoot
 	}
+
+	if h.RequestsHash != nil {
+		cpy.RequestsHash = new(common.Hash)
+		*cpy.RequestsHash = *h.RequestsHash
+	}
 	return &cpy
 }
 
@@ -425,6 +434,8 @@ func (b *Block) BaseFee() *big.Int {
 
 func (b *Block) BeaconRoot() *common.Hash { return b.header.ParentBeaconRoot }
 
+func (b *Block) RequestsHash() *common.Hash { return b.header.RequestsHash }
+
 func (b *Block) ExcessBlobGas() *uint64 {
 	var excessBlobGas *uint64
 	if b.header.ExcessBlobGas != nil {
@@ -473,6 +484,21 @@ func CalcUncleHash(uncles []*Header) common.Hash {
 		return EmptyUncleHash
 	}
 	return rlpHash(uncles)
+}
+
+// CalcRequestsHash creates the block requestsHash value for a list of requests.
+func CalcRequestsHash(requests [][]byte) common.Hash {
+	h1, h2 := sha256.New(), sha256.New()
+	var buf common.Hash
+	for _, item := range requests {
+		if len(item) > 1 { // skip items with only requestType and no data.
+			h1.Reset()
+			h1.Write(item)
+			h2.Write(h1.Sum(buf[:0]))
+		}
+	}
+	h2.Sum(buf[:0])
+	return buf
 }
 
 // NewBlockWithHeader creates a block with the given header data. The
